@@ -142,9 +142,6 @@
       :desc "Autocomplete mode"
       "- a" #'auto-complete-mode
       :leader
-      :desc "Company Mode"
-      "- c" #'company-mode
-      :leader
       :desc "Format file"
       "- b" #'eglot-format
       :leader
@@ -174,7 +171,6 @@
        #'dired-view-file))
 
 
-(add-hook 'org-mode-hook (lambda () (company-mode -1)))
 (after! org
   (defun rd/org-font-setup ()
     ;; replace list hyphen with dot
