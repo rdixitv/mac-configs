@@ -13,3 +13,9 @@ source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 alias ls="eza -al --color=always --group-directories-first"
 alias gs="git status"
+alias emt="emacs -nw"
+
+source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# Created by `pipx` on 2025-09-10 11:29:11
+export PATH="$PATH:/Users/rd/.local/bin"

@@ -151,8 +151,11 @@
       :desc "Insert org heading"
       "- h" #'org-insert-heading
       :leader
-      :desc "Open Emacs Keybindings Cheat Sheet"
-      "- e" #'(lambda () (interactive) (find-file "~/org-mode/emacs-vs-evil.org")))
+      :desc "Open org agenda file"
+      "- g" #'(lambda () (interactive) (find-file "~/org/agenda.org"))
+      :leader
+      :desc "Open org tasks file"
+      "- t" #'(lambda () (interactive) (find-file "~/org/tasks.org")))
 
 (map! :leader
       (:prefix ("c h" . "Help info from clippy")
@@ -171,6 +174,22 @@
        #'dired-view-file))
 
 
+(defun rd/org-files-with-tag (dir tag)
+  "Return a list of org files under DIR that contain TAG."
+  (let ((files (directory-files-recursively dir "\\.org$"))
+        result)
+    (dolist (f files result)
+      (with-temp-buffer
+        (insert-file-contents f nil 0 1000)
+        (goto-char (point-min))
+        (when (re-search-forward (concat ":" tag ":") nil t)
+          (push f result))))))
+
+(defun rd/refresh-org-agenda-files-advice (&rest _)
+  (interactive)
+  (setq org-agenda-files (rd/org-files-with-tag "~/org" "tasks")))
+
+
 (after! org
   (defun rd/org-font-setup ()
     ;; replace list hyphen with dot
@@ -187,7 +206,7 @@
 		    (org-level-6 . 1.1)
 		    (org-level-7 . 1.1)
 		    (org-level-8 . 1.1)))
-      (set-face-attribute (car face) nil :font "fira sans" :weight 'regular :height (cdr face)))
+      (set-face-attribute (car face) nil :font "Iosevka NF" :weight 'regular :height (cdr face)))
 
     ;; ensure that anything that should be fixed-pitch in org files appears that way
     (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
@@ -204,8 +223,8 @@
         org-hide-emphasis-markers t
         org-todo-keywords
         '((sequence
-           "TODO(t)"
-           "HOMEWORK(h)"
+           "TODO(t!)"
+           "HW(h)"
            "CLASS(C)"
            "DEADLINE(l)"
            "PROJ(p)"
@@ -213,7 +232,7 @@
            "EVENT(e)"
            "EXAM(E)"
            "|"
-           "DONE(d)"
+           "DONE(d!)"
            "CANCELLED(c)"
            "ANYTIME(a)")))
   (rd/org-font-setup))
@@ -226,20 +245,30 @@
           (tags "PRIORITY=\"B\""
                 ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
                  (org-agenda-overriding-header "Medium priority:")))
-          (tags "PRIORITY=\"C\""
-                ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                 (org-agenda-overriding-header "Low priority:")))
+          (tags-todo "+STYLE=\"habit\""
+                     ((org-agenda-overriding-header "Habits:")))
           (tags "school"
                 ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
                  (org-agenda-overriding-header "School:")))
-          (tags "classes"
-                ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                 (org-agenda-overriding-header "Classes:")))
           (tags "personal"
                 ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                 (org-agenda-overriding-header "Personal")))
-          (agenda "")
-          (alltodo "")))))
+                 (org-agenda-overriding-header "Personal:")))
+          (tags "project"
+                ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                 (org-agenda-overriding-header "Projects:")))
+
+          (agenda "" ((org-agenda-span 14)))
+          (alltodo "")
+          (tags-todo "ANYTIME"
+                     ((org-agenda-overriding-header "Anytime")))))
+       ("d" "Daily Dashboard"
+         ((agenda "" ((org-agenda-span 1)))
+          (tags-todo "+habit")
+          (todo "TODO")))
+       ("u" "Upcoming Deadlines"
+ agenda "" ((org-agenda-span 14)
+            (org-agenda-entry-types '(:deadline))))
+))
 
 
 (setq lsp-auto-guess-root nil)
@@ -254,10 +283,11 @@
       #'+format/buffer)
 
 (setq org-roam-node-display-template "${title:*} ${tags:20}")
-(setq org-agenda-files '("~/org/roam/"))
+(setq org-agenda-files (rd/org-files-with-tag "~/org" "tasks"))
 (setq org-agenda-prefix-format
-      '((todo . " %i %b %t ")
-        (agenda . " %i %t %b")))
+      '((todo . " %i %t %b ")
+        (agenda . " %i %t %b ")
+        (tags . " %i %t %b ")))
 (setq org-roam-graph-viewer nil
       org-roam-graph-executable "dot")
 (setq org-roam-capture-templates
@@ -273,8 +303,14 @@
   (let ((args (cons arg args))
         (org-roam-capture-templates (list (append (car org-roam-capture-templates)
                                                   '(:immediate-finish t)))))
+
     (apply #'org-roam-node-insert args)))
 (setq org-roam-database-connector 'sqlite-builtin)
+
+(add-to-list 'org-modules 'org-habit t)
+(setq org-habit-preceding-days 7
+      org-habit-following-days 3
+      org-agenda-columns-add-appointments-to-effort-sum t)
 
 (setq visual-fill-column-width 75
       visual-fill-column-center-text t)
