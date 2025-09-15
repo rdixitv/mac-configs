@@ -133,8 +133,6 @@
       :desc "Edit fish config"
       "- f" #'(lambda () (interactive) (find-file "~/.config/fish/config.fish"))
       :leader
-      :desc "Edit agenda"
-      "- o" #'(lambda () (interactive) (find-file "~/org/agenda.org"))
       :leader
       :desc "Rust Mode"
       "- r" #'rust-mode
@@ -152,10 +150,10 @@
       "- h" #'org-insert-heading
       :leader
       :desc "Open org agenda file"
-      "- g" #'(lambda () (interactive) (find-file "~/org/agenda.org"))
+      "- g" #'(lambda () (interactive) (find-file "~/org/roam/pages/20250219133136-agenda.org"))
       :leader
       :desc "Open org tasks file"
-      "- t" #'(lambda () (interactive) (find-file "~/org/tasks.org")))
+      "- t" #'(lambda () (interactive) (find-file "~/org/roam/pages/tasks.org")))
 
 (map! :leader
       (:prefix ("c h" . "Help info from clippy")
@@ -216,10 +214,10 @@
     (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-checkbox nil :inherit 'varible-pitch))
-  (setq org-directory "~/org/"
-        org-default-notes-file (expand-file-name "notes.org" org-directory)
+  (setq org-default-notes-file (expand-file-name "notes.org" org-directory)
         org-ellipsis " ▼ "
         org-log-done 'time
+        org-log-into-drawer nil
         org-hide-emphasis-markers t
         org-todo-keywords
         '((sequence
@@ -259,8 +257,10 @@
 
           (agenda "" ((org-agenda-span 14)))
           (alltodo "")
+          (tags-todo "EVENT"
+                     ((org-agenda-overriding-header "Events:")))
           (tags-todo "ANYTIME"
-                     ((org-agenda-overriding-header "Anytime")))))
+                     ((org-agenda-overriding-header "Anytime:")))))
        ("d" "Daily Dashboard"
          ((agenda "" ((org-agenda-span 1)))
           (tags-todo "+habit")
@@ -282,20 +282,31 @@
       :desc "Format buffer" "- -"
       #'+format/buffer)
 
+(setq org-roam-node-annotation-function (lambda (_node) ""))
+
 (setq org-roam-node-display-template "${title:*} ${tags:20}")
 (setq org-agenda-files (rd/org-files-with-tag "~/org" "tasks"))
+(setq org-attach-id-dir "~/org/roam/assets"
+      org-roam-dailies-directory "journals/"
+      org-roam-file-exclude-regexp "\\.git/.*\\|logseq/.*$")
 (setq org-agenda-prefix-format
       '((todo . " %i %t %b ")
         (agenda . " %i %t %b ")
         (tags . " %i %t %b ")))
-(setq org-roam-graph-viewer nil
-      org-roam-graph-executable "dot")
+;; (setq org-roam-graph-viewer nil
+;;       org-roam-graph-executable "dot")
 (setq org-roam-capture-templates
       '(("d" "default" plain
          "#+filetags: %?"
-         :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+         :target (file+head "pages/%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
+         ;; :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+date: %U\n")
          :unarrowed t
-         :immediate-finish t)))
+         :immediate-finish t))
+      org-roam-dailies-capture-templates
+      '(("d" "default" entry
+         "* %?"
+         :target (file+head "%<%Y-%m-%d>.org"
+                            "#+title: %<%Y-%m-%d>\n"))))
 
 
 (defun org-roam-node-insert-immediate (arg &rest args)
