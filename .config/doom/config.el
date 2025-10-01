@@ -44,6 +44,8 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
+(add-load-path! "packages")
+
 (setq doom-font (font-spec :family "Iosevka NF" :size 18)
       doom-variable-pitch-font (font-spec :family "Fira Sans" :size 15)
       doom-big-font (font-spec :family "Iosevka NF" :size 28)
@@ -153,7 +155,16 @@
       "- g" #'(lambda () (interactive) (find-file "~/org/roam/pages/20250219133136-agenda.org"))
       :leader
       :desc "Open org tasks file"
-      "- t" #'(lambda () (interactive) (find-file "~/org/roam/pages/tasks.org")))
+      "- t" #'(lambda () (interactive) (find-file "~/org/roam/pages/tasks.org"))
+      :leader
+      :desc "Open org roam ui"
+      "n r u" #'org-roam-ui-open
+      :leader
+      :desc "Open org hyperscheduler"
+      "n r h" #'org-hyperscheduler-open
+      :leader
+      :desc "Open org calendar"
+      "- c" #'cfw:open-org-calendar)
 
 (map! :leader
       (:prefix ("c h" . "Help info from clippy")
@@ -183,10 +194,59 @@
         (when (re-search-forward (concat ":" tag ":") nil t)
           (push f result))))))
 
+(defun rd/org-files-with-tag-filter (dir tag)
+  "Return a list of org files under DIR that contain TAG,
+filtering out the unneccessary diretories"
+  (let* ((files (directory-files-recursively dir "\\.org$"))
+         (filtered (seq-remove (lambda (f)
+                                  (or (string-match-p "/logseq/" f)
+                                      (string-match-p "/\\.git/" f)))
+                                files))
+         result)
+    (dolist (f filtered result)
+      (with-temp-buffer
+        (insert-file-contents f nil 0 1000)
+        (goto-char (point-min))
+        (when (re-search-forward (concat ":" tag ":") nil t)
+          (push f result))))))
+
 (defun rd/refresh-org-agenda-files-advice (&rest _)
   (interactive)
   (setq org-agenda-files (rd/org-files-with-tag "~/org" "tasks")))
 
+
+;; (defun rd/org-roam-copy-todo-to-today ()
+;;   (interactive)
+;;   (let ((org-refile-keep t)
+;;         (org-roam-dailies-capture-templates
+;;          '(("t" "tasks" entry "%?"
+;;             :if-new (file+head+olp "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"
+;;                                    ("\nTasks")))))
+;;         (org-after-refile-insert-hook #'save-buffer)
+;;         today-file
+;;         pos)
+;;     (save-window-excursion
+;;       (org-roam-dailies--capture (current-time) t)
+;;       (setq today-file (buffer-file-name))
+;;       (setq pos (point)))
+;;     (unless (equal (file-truename today-file)
+;;                    (file-truename (buffer-file-name)))
+;;       (org-refile nil nil (list "Tasks" today-file nil pos)))))
+;; (add-hook 'org-after-todo-state-change-hook
+;;              (lambda ()
+;;                (when (equal org-state "DONE")
+;;                  (rd/org-roam-copy-todo-to-today))))
+
+;; (add-hook 'org-mode-hook
+;;           (lambda ()
+;;             (setq-local tab-width 8)
+;;             (advice-add 'org-check-tab-width :override #'ignore)))
+
+;; (defun rd/org-silence-fake-tab-width (orig-fun &rest args)
+;;   (let ((inhibit-message t))
+;;     (apply orig-fun args)))
+;; (advice-add 'org-check-tab-width :around #'rd/org-silence-fake-tab-width)
+(advice-add 'org-check-tab-width :override #'ignore)
 
 (after! org
   (defun rd/org-font-setup ()
@@ -196,17 +256,19 @@
 			       (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
     ;; set faces for heading levels
-    (dolist (face '((org-level-1 . 1.7)
-		    (org-level-2 . 1.5)
-		    (org-level-3 . 1.4)
-		    (org-level-4 . 1.3)
+    (dolist (face '((org-level-1 . 1.4)
+		    (org-level-2 . 1.35)
+		    (org-level-3 . 1.3)
+		    (org-level-4 . 1.25)
 		    (org-level-5 . 1.2)
 		    (org-level-6 . 1.1)
 		    (org-level-7 . 1.1)
 		    (org-level-8 . 1.1)))
       (set-face-attribute (car face) nil :font "Iosevka NF" :weight 'regular :height (cdr face)))
 
+      ;; (set-face-attribute 'org-document-title nil :font "Fira Sans" :weight 'bold :height 1.5)
     ;; ensure that anything that should be fixed-pitch in org files appears that way
+    ;; (set-face-attribute 'org-tag)
     (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
     (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
@@ -215,8 +277,8 @@
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-checkbox nil :inherit 'varible-pitch))
   (setq org-default-notes-file (expand-file-name "notes.org" org-directory)
-        org-ellipsis " ▼ "
-        org-log-done 'time
+        ;; org-ellipsis " ▼ "
+        org-log-done t
         org-log-into-drawer nil
         org-hide-emphasis-markers t
         org-todo-keywords
@@ -234,6 +296,16 @@
            "CANCELLED(c)"
            "ANYTIME(a)")))
   (rd/org-font-setup))
+;; (add-hook 'org-mode-hook 'variable-pitch-mode)
+
+;; (straight-use-package 'ht)
+
+;; (straight-use-package '(org-supertag :host github :repo "yibie/org-supertag"))
+;; (use-package! org-supertag
+;;   :after org
+;;   :config
+;;   (setq org-supertag-sync-directories '("~/org")))
+
 
 (setq org-agenda-custom-commands
       '(("v" "A better agenda view"
@@ -261,14 +333,74 @@
                      ((org-agenda-overriding-header "Events:")))
           (tags-todo "ANYTIME"
                      ((org-agenda-overriding-header "Anytime:")))))
+       ;; ("d" "Daily Dashboard"
+       ;;   ((agenda "" ((org-agenda-span 1)))
+       ;;    (tags-todo "+habit")
+       ;;    (todo "TODO")))
+       ("h" "Agenda 2"
+           ((agenda "" ((org-agenda-skip-scheduled-if-done t)
+                        (org-agenda-time-leading-zero t)
+                        (org-agenda-timegrid-use-ampm nil)
+                        (org-agenda-skip-timestamp-if-done t)
+                        (org-agenda-skip-deadline-if-done t)
+                        (org-agenda-start-day "+0d")
+                        (org-agenda-span 7)
+                        (org-agenda-overriding-header "Calendar")
+                        ;; (org-agenda-repeating-timestamp-show-all nil)
+                        (org-agenda-remove-tags t)
+                        (org-agenda-prefix-format "   %i %?-2 t%s")
+                        (org-agenda-todo-keyword-format "")
+                        ;; (org-agenda-time)
+                        (org-agenda-current-time-string "ᐊ┈┈┈┈┈┈┈ Now")
+                        (org-agenda-scheduled-leaders '("Scheduled: " "In %2d d.: "))
+                        (org-agenda-deadline-leaders '("Deadline:  " "In %3d d.: " "%2d d. ago: "))
+                        (org-agenda-time-grid (quote ((today require-timed remove-match) () "      " "┈┈┈┈┈┈┈┈┈┈┈┈┈")))))
+
+            (tags "+TODO=\"TODO\"" (
+                                    (org-agenda-overriding-header "\nToday")
+                                    (org-agenda-sorting-strategy '(priority-down))
+                                    (org-agenda-remove-tags t)
+                                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'timestamp 'scheduled))
+                                    ;; (org-agenda-todo-ignore-scheduled 'all)
+                                    (org-agenda-prefix-format "   %-2i ")
+                                    ;; (org-agenda-todo-keyword-format "")
+                                    ))
+
+            (tags "TODO=\"PROJ\"" (
+                                                      (org-agenda-overriding-header "\n Projects")
+                                                      (org-agenda-remove-tags t)
+                                                      (org-tags-match-list-sublevels nil)
+                                                      (org-agenda-show-inherited-tags nil)
+                                                      (org-agenda-prefix-format "   %-2i %?b")
+                                                      (org-agenda-todo-keyword-format "")))
+            ))
        ("d" "Daily Dashboard"
-         ((agenda "" ((org-agenda-span 1)))
-          (tags-todo "+habit")
-          (todo "TODO")))
+        ((agenda ""
+            ((org-agenda-span 'day)
+             (org-agenda-start-on-weekday nil)
+             (org-agenda-overriding-header "Today's Schedule")
+             (org-agenda-use-time-grid t)
+             (org-agenda-time-grid
+              '((daily today require-timed)
+                (480 600 720 840 960 1080 1200)
+                "......" "----------------"))))
+         (todo "TODO"
+               ((org-agenda-overriding-header "Tasks")))))
        ("u" "Upcoming Deadlines"
- agenda "" ((org-agenda-span 14)
-            (org-agenda-entry-types '(:deadline))))
-))
+        ((agenda ""
+                 ((org-agenda-span 14)
+            (org-agenda-entry-types '(:deadline))))))
+       ("f" "Agenda + TODO"
+        ((agenda ""
+                 ((org-agenda-prefix-format "     ")
+                  (org-agenda-scheduled-leaders '("Scheduled: " "In %2d d.: "))
+                  (org-agenda-deadline-leaders '("Deadline:  " "In %3d d.: " "%2d d. ago: "))))
+         (todo "TODO"
+               ((org-agenda-overriding-header "TODOs")
+                (org-agenda-prefix-format "     ")
+                (org-agenda-show-inherited-tags t)
+                (org-agenda-sorting-strategy '(deadline-up priority-down))
+                (org-agenda-todo-ignore-deadlines nil)))))))
 
 
 (setq lsp-auto-guess-root nil)
@@ -285,10 +417,13 @@
 (setq org-roam-node-annotation-function (lambda (_node) ""))
 
 (setq org-roam-node-display-template "${title:*} ${tags:20}")
-(setq org-agenda-files (rd/org-files-with-tag "~/org" "tasks"))
+(setq org-agenda-files (rd/org-files-with-tag-filter "~/org" "tasks"))
 (setq org-attach-id-dir "~/org/roam/assets"
       org-roam-dailies-directory "journals/"
-      org-roam-file-exclude-regexp "\\.git/.*\\|logseq/.*$")
+      ;; org-roam-file-exclude-regexp "\\.git/.*\\|logseq/.*$")
+      ;; org-roam-file-exclude-regexp "\\.git\\|logseq/.*")
+      org-roam-file-exclude-regexp "\\.git\\|/logseq/")
+
 (setq org-agenda-prefix-format
       '((todo . " %i %t %b ")
         (agenda . " %i %t %b ")
@@ -323,6 +458,28 @@
       org-habit-following-days 3
       org-agenda-columns-add-appointments-to-effort-sum t)
 
+(use-package! org-alert
+  :custom
+  (alert-default-style 'osx-notifier)
+  :config
+  (setq org-alert-interval 600
+        org-alert-notify-cutoff 10
+        org-alert-notify-after-event-cutoff 0
+        org-alert-notification-title "Org Reminder")
+  (org-alert-enable))
+
+(after! org-alert
+  (advice-add 'org-alert--deadline-items :filter-return
+              (lambda (items)
+                (cl-remove-if
+                 (lambda (item)
+                   (with-current-buffer (marker-buffer (car item))
+                     (save-excursion
+                       (goto-char (car item))
+                       (member "n" (org-get-tags)))))
+                 items))))
+
+
 (setq visual-fill-column-width 75
       visual-fill-column-center-text t)
 
@@ -333,3 +490,7 @@
 
 (setq corfu-auto t
       corfu-auto-delay 0.0)
+
+; For some reason calfw doesn't work unless installed manually
+(require 'calfw)
+;; (require 'calfw-org)

@@ -49,3 +49,13 @@
 ;; (unpin! t)
 
 (package! org-roam-ui)
+;; (package! calfw)
+;; (package! calfw-cal)
+;; (package! calfw-org)
+(package! org-hyperscheduler)
+(package! org-alert)
+
+(package! ht)
+(package! gptel)
+(package! org-supertag
+  :recipe (:host github :repo "yibie/org-supertag"))
