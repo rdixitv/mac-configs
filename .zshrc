@@ -20,3 +20,4 @@ source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 # Created by `pipx` on 2025-09-10 11:29:11
 export PATH="$PATH:/Users/rd/.local/bin"
 export PATH=/Users/rd/CEdev/bin:$PATH
+export PATH="/Users/rd/.config/emacs/bin:$PATH"

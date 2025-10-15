@@ -1,6 +1,5 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
-
 (setq doom-theme 'doom-one)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -215,34 +214,34 @@ filtering out the unneccessary diretories"
   (setq org-agenda-files (rd/org-files-with-tag "~/org" "tasks")))
 
 
-;; (defun rd/org-roam-copy-todo-to-today ()
-;;   (interactive)
-;;   (let ((org-refile-keep t)
-;;         (org-roam-dailies-capture-templates
-;;          '(("t" "tasks" entry "%?"
-;;             :if-new (file+head+olp "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"
-;;                                    ("\nTasks")))))
-;;         (org-after-refile-insert-hook #'save-buffer)
-;;         today-file
-;;         pos)
-;;     (save-window-excursion
-;;       (org-roam-dailies--capture (current-time) t)
-;;       (setq today-file (buffer-file-name))
-;;       (setq pos (point)))
-;;     (unless (equal (file-truename today-file)
-;;                    (file-truename (buffer-file-name)))
-;;       (org-refile nil nil (list "Tasks" today-file nil pos)))))
-;; (add-hook 'org-after-todo-state-change-hook
-;;              (lambda ()
-;;                (when (equal org-state "DONE")
-;;                  (rd/org-roam-copy-todo-to-today))))
+(defun rd/org-roam-copy-todo-to-today ()
+  (interactive)
+  (let ((org-refile-keep t)
+        (org-roam-dailies-capture-templates
+         '(("t" "tasks" entry "%?"
+            :if-new (file+head+olp "%<%Y-%m-%d>.org" "#+title: %<%Y-%m-%d>\n"
+                                   ("\nTasks")))))
+        (org-after-refile-insert-hook #'save-buffer)
+        today-file
+        pos)
+    (save-window-excursion
+      (org-roam-dailies--capture (current-time) t)
+      (setq today-file (buffer-file-name))
+      (setq pos (point)))
+    (unless (equal (file-truename today-file)
+                   (file-truename (buffer-file-name)))
+      (org-refile nil nil (list "Tasks" today-file nil pos)))))
+(add-hook 'org-after-todo-state-change-hook
+             (lambda ()
+               (when (equal org-state "DONE")
+                 (rd/org-roam-copy-todo-to-today))))
 
-;; (add-hook 'org-mode-hook
-;;           (lambda ()
-;;             (setq-local tab-width 8)
-;;             (advice-add 'org-check-tab-width :override #'ignore)))
+(add-hook 'org-mode-hook
+          (lambda ()
+            (setq-local tab-width 8)
+            (advice-add 'org-check-tab-width :override #'ignore)))
 
-;; (defun rd/org-silence-fake-tab-width (orig-fun &rest args)
+;;(defun rd/org-silence-fake-tab-width (orig-fun &rest args)
 ;;   (let ((inhibit-message t))
 ;;     (apply orig-fun args)))
 ;; (advice-add 'org-check-tab-width :around #'rd/org-silence-fake-tab-width)
@@ -300,11 +299,12 @@ filtering out the unneccessary diretories"
 
 ;; (straight-use-package 'ht)
 
+
 ;; (straight-use-package '(org-supertag :host github :repo "yibie/org-supertag"))
 ;; (use-package! org-supertag
 ;;   :after org
 ;;   :config
-;;   (setq org-supertag-sync-directories '("~/org")))
+;;   (setq org-supertag-sync-directories '("~/org/roam")))
 
 
 (setq org-agenda-custom-commands
@@ -491,6 +491,32 @@ filtering out the unneccessary diretories"
 (setq corfu-auto t
       corfu-auto-delay 0.0)
 
-; For some reason calfw doesn't work unless installed manually
+(add-load-path! "~/.config/doom/packages/calfw/")
 (require 'calfw)
-;; (require 'calfw-org)
+(require 'calfw-org)
+
+
+;; (use-package eaf
+;;   :load-path "~/.config/emacs/site-lisp/emacs-application-framework"
+;;   :custom
+;;   ; See https://github.com/emacs-eaf/emacs-application-framework/wiki/Customization
+;;   (eaf-browser-continue-where-left-off t)
+;;   (eaf-browser-enable-adblocker t)
+;;   (browse-url-browser-function 'eaf-open-browser)
+;;   :config
+;;   (defalias 'browse-web #'eaf-open-browser)
+;;   ;; (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
+;;   ;; (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding)
+;;   ;; (eaf-bind-key nil "M-q" eaf-browser-keybinding)
+;;   )
+
+;; (require 'eaf)
+;; (require 'eaf-2048)
+;; (require 'eaf-image-viewer)
+;; (require 'eaf-pdf-viewer)
+;; (require 'eaf-browser)
+;; (require 'eaf-markdown-previewer)
+;; (require 'eaf-file-manager)
+;; (require 'eaf-mindmap)
+;; (require 'eaf-org-previewer)
+
