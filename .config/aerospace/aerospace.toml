@@ -97,28 +97,28 @@ automatically-unhide-macos-hidden-apps = false
     # cmd-enter = 'exec-and-forget open -n /Applications/iTerm.app'
     cmd-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
 
-    ctrl-z = 'split horizontal'
-    ctrl-v = 'split vertical'
+    alt-ctrl-z = 'split horizontal'
+    alt-ctrl-v = 'split vertical'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#layout
-    ctrl-slash = 'layout tiles horizontal vertical'
-    ctrl-comma = 'layout accordion horizontal vertical'
+    alt-ctrl-slash = 'layout tiles horizontal vertical'
+    alt-ctrl-comma = 'layout accordion horizontal vertical'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#focus
-    ctrl-h = 'focus --boundaries-action wrap-around-the-workspace left'
-    ctrl-j = 'focus --boundaries-action wrap-around-the-workspace down'
-    ctrl-k = 'focus --boundaries-action wrap-around-the-workspace up'
-    ctrl-l = 'focus --boundaries-action wrap-around-the-workspace right'
+    alt-ctrl-h = 'focus --boundaries-action wrap-around-the-workspace left'
+    alt-ctrl-j = 'focus --boundaries-action wrap-around-the-workspace down'
+    alt-ctrl-k = 'focus --boundaries-action wrap-around-the-workspace up'
+    alt-ctrl-l = 'focus --boundaries-action wrap-around-the-workspace right'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#move
-    ctrl-shift-h = 'move left'
-    ctrl-shift-j = 'move down'
-    ctrl-shift-k = 'move up'
-    ctrl-shift-l = 'move right'
+    alt-ctrl-shift-h = 'move left'
+    alt-ctrl-shift-j = 'move down'
+    alt-ctrl-shift-k = 'move up'
+    alt-ctrl-shift-l = 'move right'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#resize
-    ctrl-minus = 'resize smart -50'
-    ctrl-equal = 'resize smart +50'
+    alt-ctrl-minus = 'resize smart -50'
+    alt-ctrl-equal = 'resize smart +50'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
     ctrl-1 = 'workspace 1'
@@ -147,12 +147,12 @@ automatically-unhide-macos-hidden-apps = false
     # See: https://nikitabobko.github.io/AeroSpace/commands#move-workspace-to-monitor
     alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
-    ctrl-t = ['layout floating tiling', 'mode main']
+    alt-ctrl-t = ['layout floating tiling', 'mode main']
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#mode
-    ctrl-shift-semicolon = 'mode service'
-    ctrl-r = 'mode resize'
-    ctrl-b = 'mode open'
+    alt-ctrl-shift-semicolon = 'mode service'
+    alt-ctrl-r = 'mode resize'
+    alt-ctrl-b = 'mode open'
 
 [mode.open.binding]
    ctrl-b = "workspace-back-and-forth"

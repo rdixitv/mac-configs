@@ -1,0 +1,4 @@
+.config/rdemacs/*
+
+!.config/rdemacs/init.el
+!.config/rdemacs/early-init.el

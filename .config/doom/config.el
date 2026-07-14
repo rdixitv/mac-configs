@@ -342,7 +342,7 @@ filtering out the unneccessary diretories"
     (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
     (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil :inherit 'varible-pitch))
+    (set-face-attribute 'org-checkbox nil :inherit 'variable-pitch))
   (setq org-default-notes-file (expand-file-name "notes.org" org-directory)
         ;; org-ellipsis " ▼ "
         org-log-done t
@@ -365,6 +365,28 @@ filtering out the unneccessary diretories"
            "CANCELLED(c)"
            "ANYTIME(a)")))
   (rd/org-font-setup))
+
+
+(defvar rd/org-heading-heights
+  '((org-level-1 . 1.4)
+    (org-level-2 . 1.35)
+    (org-level-3 . 1.3)
+    (org-level-4 . 1.25)
+    (org-level-5 . 1.2)
+    (org-level-6 . 1.1)
+    (org-level-7 . 1.1)
+    (org-level-8 . 1.1)))
+
+(defun rd/org-use-large-headings ()
+  (interactive)
+  (dolist (face rd/org-heading-heights)
+    (set-face-attribute (car face) nil :height (cdr face))))
+
+(defun rd/org-use-normal-headings ()
+  (interactive)
+  (dolist (face rd/org-heading-heights)
+    (set-face-attribute (car face) nil :height 1.0)))
+
 ;; (add-hook 'org-mode-hook 'variable-pitch-mode)
 
 ;; (straight-use-package 'ht)
