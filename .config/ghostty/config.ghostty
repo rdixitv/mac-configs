@@ -1,0 +1,14 @@
+# background = #1a1b26
+# foreground = #a9b1d6
+font-family = "Iosevka Nerd Font Mono"
+font-family-bold = "Iosevka NFM Bold"
+font-family-italic = "Iosevka NFM Italic"
+font-feature = "+liga"
+font-size = 18
+theme = TokyoNight
+cursor-style = block
+shell-integration-features = no-cursor
+cursor-style-blink = false
+window-padding-x = 10
+window-padding-y = 10
+# keybind = global:cmd+shift+return=toggle_quick_terminal

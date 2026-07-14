@@ -10,6 +10,7 @@
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
 
+(add-to-list 'default-frame-alist '(undecorated . t))
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
@@ -116,6 +117,16 @@
                      last-nonmenu-event))
   (rd/scroll-year-calendar-forward (- (or arg 1)) event))
 
+
+(setq TeX-source-correlate-method 'synctex
+      TeX-view-program-list 
+      '(("Skim" "/Applications/Skim.app/Contents/SharedSupport/displayline -g -b %n %o %b"))
+      TeX-view-program-selection '((output-pdf "Skim"))
+      TeX-auto-save t
+      TeX-parse-self t
+      TeX-save-query nil
+      TeX-master 'dwim)
+
 (map! :leader
       :desc "scroll year calendar backward" "<left>" #'rd/scroll-year-calendar-backward
       :desc "scroll year calendar forward" "<right>" #'rd/scroll-year-calendar-forward)
@@ -151,7 +162,10 @@
       "- h" #'org-insert-heading
       :leader
       :desc "Open org agenda file"
-      "- g" #'(lambda () (interactive) (find-file "~/org/roam/pages/20250219133136-agenda.org"))
+      "- g" #'rd/open-current-agenda
+      :leader
+      :desc "Open an org agenda monthly file"
+      "- m" #'rd/open-monthly-agenda
       :leader
       :desc "Open org tasks file"
       "- t" #'(lambda () (interactive) (find-file "~/org/roam/pages/tasks.org"))
@@ -181,6 +195,11 @@
        :desc "Dired view file" "v"
        #'dired-view-file))
 
+(map! :map latex-mode-map
+      (:prefix ("SPC l" . "latex")
+       :desc "Latex live preview"
+       "p" #'+latex/live-preview))
+
 
 (defun rd/org-files-with-tag (dir tag)
   "Return a list of org files under DIR that contain TAG."
@@ -198,9 +217,9 @@
 filtering out the unneccessary diretories"
   (let* ((files (directory-files-recursively dir "\\.org$"))
          (filtered (seq-remove (lambda (f)
-                                  (or (string-match-p "/logseq/" f)
-                                      (string-match-p "/\\.git/" f)))
-                                files))
+                                 (or (string-match-p "/logseq/" f)
+                                     (string-match-p "/\\.git/" f)))
+                               files))
          result)
     (dolist (f filtered result)
       (with-temp-buffer
@@ -232,9 +251,45 @@ filtering out the unneccessary diretories"
                    (file-truename (buffer-file-name)))
       (org-refile nil nil (list "Tasks" today-file nil pos)))))
 (add-hook 'org-after-todo-state-change-hook
-             (lambda ()
-               (when (equal org-state "DONE")
-                 (rd/org-roam-copy-todo-to-today))))
+          (lambda ()
+            (when (equal org-state "DONE")
+              (rd/org-roam-copy-todo-to-today))))
+
+(require 'org-roam)
+(defun rd/open-current-agenda ()
+  "Open this month's agenda note."
+  (interactive)
+  (let* ((title (format-time-string "%Y %B Agenda"))
+         (node (seq-find
+                (lambda (node)
+                  (string= (org-roam-node-title node) title))
+                (org-roam-node-list))))
+    (if node
+        (org-roam-node-visit node)
+      (user-error "No agenda found with title: %s" title))))
+
+
+(require 'org-roam)
+(defun rd/open-monthly-agenda ()
+  "Open one a monthly agenda files."
+  (interactive)
+  (let* ((nodes (seq-filter
+                 (lambda (node)
+                   (member "monthly" (org-roam-node-tags node)))
+                 (org-roam-node-list)))
+         (choices
+          (mapcar (lambda (node)
+                    (cons (org-roam-node-title node) node))
+                  (sort nodes
+                        (lambda (a b)
+                          (string< (org-roam-node-title a)
+                                   (org-roam-node-title b)))))))
+    (if-let ((choice (completing-read
+                      "Monthly agenda: "
+                      (mapcar #'car choices)
+                      nil t)))
+        (org-roam-node-visit (cdr (assoc choice choices)))
+      (user-error "No monthly agenda selected"))))
 
 (add-hook 'org-mode-hook
           (lambda ()
@@ -247,7 +302,20 @@ filtering out the unneccessary diretories"
 ;; (advice-add 'org-check-tab-width :around #'rd/org-silence-fake-tab-width)
 (advice-add 'org-check-tab-width :override #'ignore)
 
+(defun rd/org-toggle-variable-pitch ()
+  (interactive)
+  (if (bound-and-true-p mixed-pitch-mode)
+      (mixed-pitch-mode -1)
+    (mixed-pitch-mode 1)))
+
+(map! :map org-mode-map
+      :leader
+      :desc "Toggle variable pitch"
+      "t p" #'rd/org-toggle-variable-pitch)
+
 (after! org
+  (setq mixed-pitch-set-height t)
+  (setq mixed-pitch-variable-pitch-cursor nil)
   (defun rd/org-font-setup ()
     ;; replace list hyphen with dot
     (font-lock-add-keywords 'org-mode
@@ -265,7 +333,7 @@ filtering out the unneccessary diretories"
 		    (org-level-8 . 1.1)))
       (set-face-attribute (car face) nil :font "Iosevka NF" :weight 'regular :height (cdr face)))
 
-      ;; (set-face-attribute 'org-document-title nil :font "Fira Sans" :weight 'bold :height 1.5)
+    (set-face-attribute 'org-document-title nil :font "Fira Sans" :weight 'bold :height 1.5)
     ;; ensure that anything that should be fixed-pitch in org files appears that way
     ;; (set-face-attribute 'org-tag)
     (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
@@ -290,6 +358,8 @@ filtering out the unneccessary diretories"
            "TEST(T)"
            "EVENT(e)"
            "EXAM(E)"
+           "DOING(i)"
+           "TODAY(o)"
            "|"
            "DONE(d!)"
            "CANCELLED(c)"
@@ -333,74 +403,118 @@ filtering out the unneccessary diretories"
                      ((org-agenda-overriding-header "Events:")))
           (tags-todo "ANYTIME"
                      ((org-agenda-overriding-header "Anytime:")))))
-       ;; ("d" "Daily Dashboard"
-       ;;   ((agenda "" ((org-agenda-span 1)))
-       ;;    (tags-todo "+habit")
-       ;;    (todo "TODO")))
-       ("h" "Agenda 2"
-           ((agenda "" ((org-agenda-skip-scheduled-if-done t)
-                        (org-agenda-time-leading-zero t)
-                        (org-agenda-timegrid-use-ampm nil)
-                        (org-agenda-skip-timestamp-if-done t)
-                        (org-agenda-skip-deadline-if-done t)
-                        (org-agenda-start-day "+0d")
-                        (org-agenda-span 7)
-                        (org-agenda-overriding-header "Calendar")
-                        ;; (org-agenda-repeating-timestamp-show-all nil)
-                        (org-agenda-remove-tags t)
-                        (org-agenda-prefix-format "   %i %?-2 t%s")
-                        (org-agenda-todo-keyword-format "")
-                        ;; (org-agenda-time)
-                        (org-agenda-current-time-string "ᐊ┈┈┈┈┈┈┈ Now")
-                        (org-agenda-scheduled-leaders '("Scheduled: " "In %2d d.: "))
-                        (org-agenda-deadline-leaders '("Deadline:  " "In %3d d.: " "%2d d. ago: "))
-                        (org-agenda-time-grid (quote ((today require-timed remove-match) () "      " "┈┈┈┈┈┈┈┈┈┈┈┈┈")))))
+        ;; ("d" "Daily Dashboard"
+        ;;   ((agenda "" ((org-agenda-span 1)))
+        ;;    (tags-todo "+habit")
+        ;;    (todo "TODO")))
+        ("h" "Agenda 2"
+         ((agenda "" ((org-agenda-skip-scheduled-if-done t)
+                      (org-agenda-time-leading-zero t)
+                      (org-agenda-timegrid-use-ampm nil)
+                      (org-agenda-skip-timestamp-if-done t)
+                      (org-agenda-skip-deadline-if-done t)
+                      (org-agenda-start-day "+0d")
+                      (org-agenda-span 7)
+                      (org-agenda-overriding-header "Calendar")
+                      ;; (org-agenda-repeating-timestamp-show-all nil)
+                      (org-agenda-remove-tags t)
+                      (org-agenda-prefix-format "   %i %?-2 t%s")
+                      (org-agenda-todo-keyword-format "")
+                      ;; (org-agenda-time)
+                      (org-agenda-current-time-string "ᐊ┈┈┈┈┈┈┈ Now")
+                      (org-agenda-scheduled-leaders '("Scheduled: " "In %2d d.: "))
+                      (org-agenda-deadline-leaders '("Deadline:  " "In %3d d.: " "%2d d. ago: "))
+                      (org-agenda-time-grid (quote ((today require-timed remove-match) () "      " "┈┈┈┈┈┈┈┈┈┈┈┈┈")))))
 
-            (tags "+TODO=\"TODO\"" (
-                                    (org-agenda-overriding-header "\nToday")
-                                    (org-agenda-sorting-strategy '(priority-down))
-                                    (org-agenda-remove-tags t)
-                                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'timestamp 'scheduled))
-                                    ;; (org-agenda-todo-ignore-scheduled 'all)
-                                    (org-agenda-prefix-format "   %-2i ")
-                                    ;; (org-agenda-todo-keyword-format "")
-                                    ))
+          (tags "+TODO=\"TODO\"" (
+                                  (org-agenda-overriding-header "\nToday")
+                                  (org-agenda-sorting-strategy '(priority-down))
+                                  (org-agenda-remove-tags t)
+                                  (org-agenda-skip-function '(org-agenda-skip-entry-if 'timestamp 'scheduled))
+                                  ;; (org-agenda-todo-ignore-scheduled 'all)
+                                  (org-agenda-prefix-format "   %-2i ")
+                                  ;; (org-agenda-todo-keyword-format "")
+                                  ))
 
-            (tags "TODO=\"PROJ\"" (
-                                                      (org-agenda-overriding-header "\n Projects")
-                                                      (org-agenda-remove-tags t)
-                                                      (org-tags-match-list-sublevels nil)
-                                                      (org-agenda-show-inherited-tags nil)
-                                                      (org-agenda-prefix-format "   %-2i %?b")
-                                                      (org-agenda-todo-keyword-format "")))
-            ))
-       ("d" "Daily Dashboard"
-        ((agenda ""
-            ((org-agenda-span 'day)
-             (org-agenda-start-on-weekday nil)
-             (org-agenda-overriding-header "Today's Schedule")
-             (org-agenda-use-time-grid t)
-             (org-agenda-time-grid
-              '((daily today require-timed)
-                (480 600 720 840 960 1080 1200)
-                "......" "----------------"))))
-         (todo "TODO"
-               ((org-agenda-overriding-header "Tasks")))))
-       ("u" "Upcoming Deadlines"
-        ((agenda ""
-                 ((org-agenda-span 14)
-            (org-agenda-entry-types '(:deadline))))))
-       ("f" "Agenda + TODO"
-        ((agenda ""
-                 ((org-agenda-prefix-format "     ")
-                  (org-agenda-scheduled-leaders '("Scheduled: " "In %2d d.: "))
-                  (org-agenda-deadline-leaders '("Deadline:  " "In %3d d.: " "%2d d. ago: "))))
-         (todo "TODO"
-               ((org-agenda-overriding-header "TODOs")
-                (org-agenda-prefix-format "     ")
-                (org-agenda-show-inherited-tags t)
-                (org-agenda-sorting-strategy '(deadline-up priority-down))
-                (org-agenda-todo-ignore-deadlines nil)))))))
+          (tags "TODO=\"PROJ\"" (
+                                 (org-agenda-overriding-header "\n Projects")
+                                 (org-agenda-remove-tags t)
+                                 (org-tags-match-list-sublevels nil)
+                                 (org-agenda-show-inherited-tags nil)
+                                 (org-agenda-prefix-format "   %-2i %?b")
+                                 (org-agenda-todo-keyword-format "")))
+          ))
+
+        ("d" "Daily Dashboard"
+         ((agenda ""
+                  ((org-agenda-span 'day)
+                   (org-agenda-start-on-weekday nil)
+                   (org-agenda-overriding-header "Today's Schedule")
+                   (org-agenda-use-time-grid t)
+                   (org-agenda-time-grid
+                    '((daily today require-timed)
+                      (480 600 720 840 960 1080 1200)
+                      "......" "----------------"))))
+          (todo "TODO"
+                ((org-agenda-overriding-header "Tasks")))))
+        ("u" "Upcoming Deadlines"
+         ((agenda ""
+                  ((org-agenda-span 14)
+                   (org-agenda-entry-types '(:deadline))))))
+        ("f" "Agenda + TODO"
+         ((agenda ""
+                  ((org-agenda-prefix-format "     ")
+                   (org-agenda-scheduled-leaders '("Scheduled: " "In %2d d.: "))
+                   (org-agenda-deadline-leaders '("Deadline:  " "In %3d d.: " "%2d d. ago: "))))
+          (todo "TODO"
+                ((org-agenda-overriding-header "TODOs")
+                 (org-agenda-prefix-format "     ")
+                 (org-agenda-show-inherited-tags t)
+                 (org-agenda-sorting-strategy '(deadline-up priority-down))
+                 (org-agenda-todo-ignore-deadlines nil)))
+          (todo "DOING"
+                ((org-agenda-overriding-header "Doing")
+                 (org-agenda-prefix-format "     ")
+                 (org-agenda-show-inherited-tags t)
+                 (org-agenda-sorting-strategy '(deadline-up priority-down))
+                 (org-agenda-todo-ignore-deadlines nil)))
+          (todo "TODAY"
+                ((org-agenda-overriding-header "Today")
+                 (org-agenda-prefix-format "     ")
+                 (org-agenda-show-inherited-tags t)
+                 (org-agenda-sorting-strategy '(deadline-up priority-down))
+                 (org-agenda-todo-ignore-deadlines nil)))))
+
+        ("c" "School Dashboard"
+         ((agenda "" ((org-agenda-span 14)
+                      (org-agenda-overriding-header "Agenda")
+                      (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                      (org-agenda-tag-filter-preset '("+sch"))))
+          
+          (tags "sch+eng"  ((org-agenda-overriding-header "English")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+math" ((org-agenda-overriding-header "Mathematics")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+esp"  ((org-agenda-overriding-header "Spanish")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+phy"  ((org-agenda-overriding-header "Physics")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+chem" ((org-agenda-overriding-header "Chemistry")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+eco"  ((org-agenda-overriding-header "Economics")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+ee"   ((org-agenda-overriding-header "Extended Essay")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+tok"  ((org-agenda-overriding-header "Theory of Knowledge")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          (tags "sch+cas"  ((org-agenda-overriding-header "CAS")
+                            (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))))
+          
+          (tags "sch-eng-math-esp-phy-chem-eco-ee-tok-cas"
+                ((org-agenda-overriding-header "Other School Tasks")
+                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done)))))
+         
+         ((org-agenda-sticky t)))))
 
 
 (setq lsp-auto-guess-root nil)
@@ -486,37 +600,34 @@ filtering out the unneccessary diretories"
 (setq confirm-kill-processes nil
       confirm-kill-emacs nil)
 
-(setq +latex-viewers '(pdf-tools))
+;; (setq +latex-viewers '(pdf-tools))
 
 (setq corfu-auto t
       corfu-auto-delay 0.0)
+
 
 (add-load-path! "~/.config/doom/packages/calfw/")
 (require 'calfw)
 (require 'calfw-org)
 
+(setq ispell-dictionary "british")
 
-;; (use-package eaf
-;;   :load-path "~/.config/emacs/site-lisp/emacs-application-framework"
-;;   :custom
-;;   ; See https://github.com/emacs-eaf/emacs-application-framework/wiki/Customization
-;;   (eaf-browser-continue-where-left-off t)
-;;   (eaf-browser-enable-adblocker t)
-;;   (browse-url-browser-function 'eaf-open-browser)
-;;   :config
-;;   (defalias 'browse-web #'eaf-open-browser)
-;;   ;; (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
-;;   ;; (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding)
-;;   ;; (eaf-bind-key nil "M-q" eaf-browser-keybinding)
-;;   )
+;; (use-package! typst-ts-mode
+;;   :mode ("\\.typ\\'" . typst-ts-mode)
+;;   :hook (typst-ts-mode . lsp-deferred))
 
-;; (require 'eaf)
-;; (require 'eaf-2048)
-;; (require 'eaf-image-viewer)
-;; (require 'eaf-pdf-viewer)
-;; (require 'eaf-browser)
-;; (require 'eaf-markdown-previewer)
-;; (require 'eaf-file-manager)
-;; (require 'eaf-mindmap)
-;; (require 'eaf-org-previewer)
+(use-package! typst-ts-mode
+  :mode ("\\.typ\\'" . typst-ts-mode)
 
+  :config
+  ;; nicer syntax highlighting
+  (setq typst-ts-mode-enable-raw-blocks-highlight t))
+
+(use-package! exec-path-from-shell
+  :config
+  (exec-path-from-shell-initialize))
+
+(setq org-clock-persist 'history)
+(org-clock-persistence-insinuate)
+(setq org-clock-in-resume t)
+(setq org-clock-out-remove-zero-time-clocks t)

@@ -21,3 +21,4 @@ source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 export PATH="$PATH:/Users/rd/.local/bin"
 export PATH=/Users/rd/CEdev/bin:$PATH
 export PATH="/Users/rd/.config/emacs/bin:$PATH"
+export PATH="$PATH:$HOME/.cargo/env"

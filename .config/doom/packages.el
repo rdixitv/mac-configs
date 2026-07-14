@@ -54,8 +54,11 @@
 ;; (package! calfw-org)
 (package! org-hyperscheduler)
 (package! org-alert)
-
+(package! mixed-pitch)
 (package! ht)
-(package! gptel)
-(package! org-supertag
-  :recipe (:host github :repo "yibie/org-supertag"))
+(package! platformio-mode)
+(package! typst-preview)
+(package! typst-ts-mode)
+;; (package! org-supertag
+;;   :recipe (:host github :repo "yibie/org-supertag"))
+(package! exec-path-from-shell)

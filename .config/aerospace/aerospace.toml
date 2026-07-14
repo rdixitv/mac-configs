@@ -1,9 +1,8 @@
-# Place a copy of this config to ~/.aerospace.toml
-# After that, you can edit ~/.aerospace.toml to your liking
-
 # You can use it to add commands that run after AeroSpace startup.
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
 # after-startup-command = ["exec-and-forget borders", "exec-and-forget sketchybar"]
+
+config-version = 2
 
 # exec-on-workspace-change = [
 #   '/bin/bash',
@@ -94,8 +93,9 @@ automatically-unhide-macos-hidden-apps = false
     #     activate
     # end tell'
     # '''
-    
-    cmd-enter = 'exec-and-forget open -n /Applications/iTerm.app'
+
+    # cmd-enter = 'exec-and-forget open -n /Applications/iTerm.app'
+    cmd-enter = 'exec-and-forget open -n /Applications/Ghostty.app'
 
     ctrl-z = 'split horizontal'
     ctrl-v = 'split vertical'
@@ -152,6 +152,10 @@ automatically-unhide-macos-hidden-apps = false
     # See: https://nikitabobko.github.io/AeroSpace/commands#mode
     ctrl-shift-semicolon = 'mode service'
     ctrl-r = 'mode resize'
+    ctrl-b = 'mode open'
+
+[mode.open.binding]
+   ctrl-b = "workspace-back-and-forth"
 
 [mode.resize.binding]
     h = 'resize width -50'

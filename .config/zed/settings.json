@@ -1,0 +1,75 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "show_edit_predictions": false,
+  "languages": {
+    "Typst": {
+      "show_edit_predictions": false
+    }
+  },
+  "vim": {
+    "cursor_shape": {
+      "visual": "hollow",
+      "insert": "bar"
+    }
+  },
+  "disable_ai": false,
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "dock": "left"
+  },
+  "agent": {
+    "button": false,
+    "dock": "right",
+    "favorite_models": [],
+    "model_parameters": []
+  },
+  "git_panel": {
+    "dock": "left"
+  },
+  "helix_mode": false,
+  "cursor_shape": "block",
+  "buffer_font_family": "Iosevka Nerd Font",
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "vim_mode": true,
+  "icon_theme": {
+    "mode": "system",
+    "light": "Zed (Default)",
+    "dark": "Zed (Default)"
+  },
+  "ui_font_size": 16,
+  "buffer_font_size": 16.0,
+  "theme": {
+    "mode": "system",
+    "light": "One Light",
+    "dark": "Tokyo Night"
+  },
+  "lsp": {
+      "tinymist": {
+        "initialization_options": {
+          "preview": {
+            "background": {
+              "enabled": true
+            }
+          }
+        },
+        "settings": {
+          "exportPdf": "onSave"
+        }
+      }
+    }
+}
